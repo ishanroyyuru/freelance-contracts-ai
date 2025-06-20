@@ -70,6 +70,9 @@ AI-generated summaries of selected clauses.
 - An **Annotation** belongs to one **Contract** and one **User**
 - A **Summary** belongs to one **Contract** and one **User**
 
+## ERD Diagram
+[ERD](./docs/erd.png)
+
 ---
 
 # Possible Future Extensions
