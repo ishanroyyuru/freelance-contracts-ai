@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  contracts    Contract[]
+  annotations  Annotation[]
+  summaries    Summary[]
+}
+
+model Contract {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  text      String
+  status    String
+  createdAt DateTime @default(now())
+
+  annotations Annotation[]
+  summaries   Summary[]
+}
+
+model Annotation {
+  id          String   @id @default(uuid())
+  contractId  String
+  contract    Contract @relation(fields: [contractId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  startOffset Int
+  endOffset   Int
+  comment     String
+  createdAt   DateTime @default(now())
+}
+
+model Summary {
+  id           String   @id @default(uuid())
+  contractId   String
+  contract     Contract @relation(fields: [contractId], references: [id])
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  originalText String
+  summaryText  String
+  createdAt    DateTime @default(now())
+}
