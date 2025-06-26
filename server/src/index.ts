@@ -4,11 +4,16 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { OpenAI } from 'openai';
 import { nextTick } from 'process';
+import { createRequire } from 'module';
 
 dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 app.use(cors());
 app.use(express.json());
@@ -168,7 +173,7 @@ const updateContract: RequestHandler = async(req, res, next) => {
             where: { id, userId },
             data: payload
         });
-        if(contracts.count == 0){
+        if(contracts.count === 0){
             res.status(404).json({ error: 'No contracts found or not yours' });
             return;
         }
@@ -188,7 +193,7 @@ const deleteContract: RequestHandler = async(req, res, next) => {
         const contracts = await prisma.contract.deleteMany({
             where: { id, userId }
         })
-        if(contracts.count == 0){
+        if(contracts.count === 0){
             res.status(404).json({ error: 'No contract found or not yours'});
             return;
         }
@@ -198,6 +203,143 @@ const deleteContract: RequestHandler = async(req, res, next) => {
     }
 }
 app.delete('/contracts/:id', deleteContract);
+
+//create an annotation on a contract 
+const createAnnotation: RequestHandler = async(req, res, next) => {
+    try{
+        // @ts-ignore
+        const userId = req.userId;
+        const { contractId } = req.params;
+        const { startOffset, endOffset, comment } = req.body;
+
+        const contract = await prisma.contract.findUnique({
+            where: { id: contractId }
+        });
+        if (!contract || contract.userId !== userId) {
+            res.status(404).json({ error: 'Contract not found or not yours' });
+            return;
+        }
+
+        const annotation = await prisma.annotation.create({
+            data: { contractId, userId, startOffset, endOffset, comment }
+        });
+
+        res.status(201).json(annotation);
+    } catch(err){
+        next(err);
+    }
+};
+app.post('/contracts/:contractId/annotations', requireAuth, createAnnotation);
+
+//list all annotations for one contract
+const listAnnotations: RequestHandler = async(req, res, next) => {
+    try{
+        const { contractId } = req.params;
+        // @ts-ignore
+        const userId = req.userId;
+
+        const annotations = await prisma.annotation.findMany({
+            where: { contractId, userId },
+            orderBy: { createdAt: 'asc' }
+        });
+
+        res.json({ annotations });
+    } catch(err){
+        next(err);
+    }
+};
+app.get('/contracts/:contractId/annotations', requireAuth, listAnnotations);
+
+//update one annotation
+const updateAnnotation: RequestHandler = async(req, res, next) => {
+    try{
+        const { contractId } = req.params;
+        // @ts-ignore
+        const userId = req.userId;
+        const { startOffset, endOffset, comment } = req.body;
+        const annotations = await prisma.annotation.updateMany({
+            where: { contractId, userId},
+            data: { startOffset, endOffset, comment }
+        })
+        if(annotations.count === 0){
+            res.status(404).json({ message: 'No annotations found' });
+            return;
+        }
+        res.json({ message: 'Annotation Updated'} );
+    } catch(err){
+        next(err);
+    }
+};
+app.put('/contracts/:contractId/annotations', requireAuth, updateAnnotation);
+
+//delete one annotation
+const deleteAnnotation: RequestHandler = async(req, res, next) => {
+    try{
+        const { contractId, id } = req.params;
+        // @ts-ignore
+        const userId = req.userId;
+        
+        const annotation = await prisma.annotation.deleteMany({
+            where: { id, contractId, userId }
+        })
+
+        if(annotation.count === 0){
+            res.status(404).json({ message: 'No annotation found' });
+            return;
+        }
+        res.json({ message: 'Annotation deleted' });
+    } catch(err){
+        next(err);
+    }
+}
+app.delete('/contracts/:contractId/annotations/:id', requireAuth, deleteAnnotation);
+
+//create an AI summary
+const createSummary: RequestHandler = async (req, res, next) => {
+    try{
+        // @ts-ignore
+        const userId = req.userId;
+        const { contractId } = req.params;
+        const { originalText } = req.body;
+
+        if(!originalText){
+            res.status(400).json({ error: 'Original text is required' });
+            return;
+        }
+
+        const contract = await prisma.contract.findUnique({
+            where: { id: contractId }
+        });
+        if(!contract || contract.userId !== userId){
+            res.status(404).json({ error: 'Contract not found or not yours'});
+            return;
+        }
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                { role: 'system', content: 'You are helpful legal assistant that summarizes legal contract clauses.' },
+                { role: 'user', content: originalText }
+            ]
+        });
+        const choice = completion.choices?.[0];
+        const text = choice?.message?.content;
+        if (!text) {
+            res.status(502).json({ error: 'AI did not return any text' });
+            return;
+        }
+        const summaryText = text.trim();
+
+        const summary = await prisma.summary.create({
+            data: { contractId, userId, originalText, summaryText }
+        });
+
+        res.status(201).json(summary);
+    } catch(err){
+        next(err);
+    }
+};
+app.post('/contracts/:contractId/summaries', requireAuth, createSummary);
 
 //returns your userId if you supply a valid JWT
 app.get('/me', requireAuth,(req: Request, res: Response) => {
