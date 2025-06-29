@@ -20,7 +20,6 @@ app.use(express.json());
 
 //signup endpoint
 const signupHandler: RequestHandler = async (req, res, next) => {
-    console.log('🤖 signup hit!', req.body);
     try {
     const { email, password, name } = req.body;
     if (!email || !password) {
@@ -340,6 +339,38 @@ const createSummary: RequestHandler = async (req, res, next) => {
     }
 };
 app.post('/contracts/:contractId/summaries', requireAuth, createSummary);
+
+//searching contracts endpoint
+const searchContracts: RequestHandler = async(req, res, next) => {
+    try{
+        // @ts-ignore
+        const userId = req.userId;
+        const query = (req.query.query as string)?.trim();
+        
+        if(!query){
+            res.status(400).json({ error: 'Query parameter required' });
+            return;
+        }
+
+        const results = await prisma.$queryRaw<
+        Array<{ id: string; title: string; snippet: string }>
+        >`
+        SELECT id,
+                title,
+                ts_headline('english', text, plainto_tsquery('english', ${query})) AS snippet
+        FROM "Contract"
+        WHERE "userId" = ${userId}
+            AND tsv @@ plainto_tsquery('english', ${query})
+        ORDER BY ts_rank(tsv, plainto_tsquery('english', ${query})) DESC
+        LIMIT 20;
+        `;
+
+        res.json(results);
+    }catch(err){
+        next(err);
+    }
+};
+app.get('/search' , requireAuth, searchContracts);
 
 //returns your userId if you supply a valid JWT
 app.get('/me', requireAuth,(req: Request, res: Response) => {
