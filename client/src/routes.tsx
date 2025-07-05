@@ -8,7 +8,7 @@ const router = createBrowserRouter([
     { path: "/signup", element: <Signup />},
     { path: "/login", element: <Login />},
     { path: "/", element: <Dashboard />},
-    { path: "/contract/:id", element: <Contract />},
+    { path: "/contracts/:id", element: <Contract />},
     { path: "*", element: <Navigate to="/" replace />},
 ]);
 
