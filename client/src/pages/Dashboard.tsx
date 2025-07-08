@@ -14,6 +14,8 @@ export default function Dashboard() {
     const [title, setTitle] = useState("");
     const [text, setText] = useState("");
     const [contracts, setContracts] = useState<Contract[]>([]);
+    const [searchTerm, setSearchTerm] = useState("")
+    const [results, setResults] = useState<{ id: string; title: string; snippet: string; }[]>([]);
 
     useEffect(() => {
         if(!token) return;
@@ -42,7 +44,7 @@ export default function Dashboard() {
         } catch(err: any){
             alert(err.response?.data?.error || "Create contract failed");
         }
-    }
+    };
 
     const handleDelete = async (id: string) => {
         if (!confirm("Delete this contract?")) return;
@@ -55,11 +57,66 @@ export default function Dashboard() {
             console.error(err);
             alert("Delete failed");
         }
-    }
+    };
+
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try{
+            const res = await axios.get< typeof results >(`http://localhost:5001/search?query=${encodeURIComponent(searchTerm)}`,
+                { headers: { Authorization: `Bearer ${token}`}}
+            );
+            setResults(res.data);
+        }catch(err: any){
+            console.error(err);
+            alert("Search failed");
+        }
+    };
 
     return (
     <div className="max-w-3xl mx-auto mt-10 p-4">
       <h1 className="text-2xl font-bold mb-6">Your Contracts</h1>
+        <form
+        onSubmit={handleSearch}
+        className="max-w-3xl mx-auto mb-8 flex space-x-2"
+        >
+        <input
+            type="text"
+            placeholder="Search contracts…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-grow border p-2"
+        />
+        <button
+            type="submit"
+            className="bg-blue-600 text-white py-2 px-4 rounded"
+        >
+            Search
+        </button>
+        </form>
+
+        {/* Search Results */}
+        {results.length > 0 && (
+        <div className="max-w-3xl mx-auto mb-8 p-4 border rounded">
+            <h2 className="text-xl font-semibold mb-4">Search Results</h2>
+            <ul className="space-y-4">
+            {results.map((r) => (
+                <li key={r.id} className="p-2 border rounded">
+                <Link
+                    to={`/contracts/${r.id}`}
+                    className="text-blue-600 font-medium"
+                >
+                    {r.title}
+                </Link>
+                <p
+                    className="mt-1 text-sm text-gray-700"
+                    // snippet contains html/highlight tags—dangerouslySetInnerHTML
+                    dangerouslySetInnerHTML={{ __html: r.snippet }}
+                />
+                </li>
+            ))}
+            </ul>
+        </div>
+        )}
         <form onSubmit={handleCreate} className="max-w-3xl mx-auto mb-8 space-y-4 p-4 border rounded">
             <h2 className="text-xl font-semibold">New Contract</h2>
 
