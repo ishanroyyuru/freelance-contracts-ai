@@ -1,0 +1,17 @@
+// client/tsconfig.jest.json
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    // override for Jest: output CJS so `import` → `require`
+    "module": "CommonJS",
+    // disable verbatim ESM syntax so ts-jest will transform imports
+    "verbatimModuleSyntax": false,
+    "jsx": "react-jsx",
+    "types": ["jest", "node", "jsdom"]
+  },
+  "include": [
+    "src",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ]
+}

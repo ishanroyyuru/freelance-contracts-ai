@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 type ContractDetail = {
   id: string;
@@ -91,7 +91,7 @@ export default function Contract() {
         }
     };
 
-    const handleSummarize = async(e: React.FormEvent) => {
+    const handleSummarize = async() => {
         if(!originalText) return;
         try{
             const res = await axios.post<Summary>(`http://localhost:5001/contracts/${id}/summaries`,
