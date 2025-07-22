@@ -26,8 +26,8 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgres://testuser:testpass@localhost:5432/contractcollab_test
-      JWT_SECRET: TVjD/0lNzPnE+SNcyVa+/Iv85N91oZVSqSG1ZL+X8xA=
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
     steps:
       - uses: actions/checkout@v3
