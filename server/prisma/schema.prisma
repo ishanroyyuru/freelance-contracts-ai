@@ -41,7 +41,7 @@ model Contract {
 model Annotation {
   id          String   @id @default(uuid())
   contractId  String
-  contract    Contract @relation(fields: [contractId], references: [id])
+  contract    Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   startOffset Int
@@ -53,7 +53,7 @@ model Annotation {
 model Summary {
   id           String   @id @default(uuid())
   contractId   String
-  contract     Contract @relation(fields: [contractId], references: [id])
+  contract     Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
   userId       String
   user         User     @relation(fields: [userId], references: [id])
   originalText String

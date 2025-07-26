@@ -182,23 +182,29 @@ const updateContract: RequestHandler = async(req, res, next) => {
 app.put('/contracts/:id', updateContract);
 
 //delete contract
-const deleteContract: RequestHandler = async(req, res, next) => {
-    try{
-        const { id } = req.params;
-        // @ts-ignore
-        const userId = req.userId;
-        const contracts = await prisma.contract.deleteMany({
-            where: { id, userId }
-        })
-        if(contracts.count === 0){
-            res.status(404).json({ error: 'No contract found or not yours'});
-            return;
-        }
-        res.json({ message: 'Deleted' });
-    } catch(err){
-        next(err);
+const deleteContract: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    // @ts-ignore
+    const userId = req.userId;
+
+    await prisma.annotation.deleteMany({ where: { contractId: id } });
+    await prisma.summary   .deleteMany({ where: { contractId: id } });
+
+    const result = await prisma.contract.deleteMany({
+      where: { id, userId }
+    });
+
+    if (result.count === 0) {
+      res.status(404).json({ error: 'No contract found or not yours' });
+      return;
     }
-}
+
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
 app.delete('/contracts/:id', deleteContract);
 
 //create an annotation on a contract 
