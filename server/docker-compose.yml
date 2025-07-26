@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: contractcollab_test
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  api:
+    build: .
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "5001:5001"
+    environment:
+      DATABASE_URL: postgres://testuser:testpass@db:5432/contractcollab_test
+      JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    env_file:
+      - .env
+
+volumes:
+  db_data:
