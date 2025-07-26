@@ -1,20 +1,22 @@
-# Use an official Node.js runtime as a parent image
-FROM node:18-alpine
+# server/Dockerfile
 
-# Set working directory inside the container
+FROM node:18-alpine
 WORKDIR /app
 
-# Copy package.json and package-lock.json (or yarn.lock) first
+# 1) Copy only package files (for Docker cache)
 COPY package*.json ./
 
-# Install dependencies
+# 2) Install dependencies
 RUN npm ci
 
-# Copy the rest of the app’s source code
+# 3) Copy the rest of your backend (including prisma/schema.prisma)
 COPY . .
 
-# Expose the port your app listens on
+# 4) Generate the Prisma client now that schema is in place
+RUN npx prisma generate
+
+# 5) Expose your app port
 EXPOSE 5001
 
-# Default command to run your app
+# 6) Start the server
 CMD ["npm", "start"]
