@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { Link } from "react-router-dom";
+const BACKEND_URL = "https://freelance-contracts-ai-production.up.railway.app";
 
 type Contract = {
     id: string;
@@ -20,7 +21,7 @@ export default function Dashboard() {
     useEffect(() => {
         if(!token) return;
 
-        axios.get<Contract[]>("http://localhost:5001/contracts", {
+        axios.get<Contract[]>(`${BACKEND_URL}/contracts`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setContracts(res.data))
@@ -33,7 +34,7 @@ export default function Dashboard() {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         try{
-            const res = await axios.post("http://localhost:5001/contracts", 
+            const res = await axios.post(`${BACKEND_URL}/contracts`, 
                 { title, text, status: "Draft" },
                 { headers: { Authorization: `Bearer ${token}` } },
             );
@@ -49,7 +50,7 @@ export default function Dashboard() {
     const handleDelete = async (id: string) => {
         if (!confirm("Delete this contract?")) return;
         try{
-            await axios.delete(`http://localhost:5001/contracts/${id}`, 
+            await axios.delete(`${BACKEND_URL}/contracts/${id}`, 
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setContracts((cs) => cs.filter((c) => c.id !== id));
@@ -62,7 +63,7 @@ export default function Dashboard() {
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         try{
-            const res = await axios.get< typeof results >(`http://localhost:5001/search?query=${encodeURIComponent(searchTerm)}`,
+            const res = await axios.get< typeof results >(`${BACKEND_URL}/search?query=${encodeURIComponent(searchTerm)}`,
                 { headers: { Authorization: `Bearer ${token}`}}
             );
             setResults(res.data);

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
+const BACKEND_URL = "https://freelance-contracts-ai-production.up.railway.app";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -12,7 +13,7 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5001/login", { email, password });
+      const res = await axios.post(`${BACKEND_URL}/login`, { email, password });
       setToken(res.data.token);
       navigate("/", { replace: true });
     } catch (err: any) {

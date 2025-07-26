@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { useParams } from "react-router-dom";
+const BACKEND_URL = "https://freelance-contracts-ai-production.up.railway.app";
 
 type ContractDetail = {
   id: string;
@@ -45,7 +46,7 @@ export default function Contract() {
         if (!id || !token) return;
 
         axios
-        .get<ContractDetail>(`http://localhost:5001/contracts/${id}`, {
+        .get<ContractDetail>(`${BACKEND_URL}/contracts/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setContract(res.data))
@@ -55,7 +56,7 @@ export default function Contract() {
         });
 
         axios
-        .get<Annotation[]>(`http://localhost:5001/contracts/${id}/annotations`, {
+        .get<Annotation[]>(`${BACKEND_URL}/contracts/${id}/annotations`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setAnnotations(res.data))
@@ -65,7 +66,7 @@ export default function Contract() {
         });
 
         axios
-        .get<Summary[]>(`http://localhost:5001/contracts/${id}/summaries`, {
+        .get<Summary[]>(`${BACKEND_URL}/contracts/${id}/summaries`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         .then(res => setSummaries(res.data))
@@ -77,7 +78,7 @@ export default function Contract() {
     const handleAnnotate = async(e: React.FormEvent) => {
         e.preventDefault();
         try{
-            const res = await axios.post(`http://localhost:5001/contracts/${id}/annotations`, 
+            const res = await axios.post(`${BACKEND_URL}/contracts/${id}/annotations`, 
                 { startOffset, endOffset, comment },
                 { headers: { Authorization: `Bearer ${token}`} },
             );
@@ -94,7 +95,7 @@ export default function Contract() {
     const handleSummarize = async() => {
         if(!originalText) return;
         try{
-            const res = await axios.post<Summary>(`http://localhost:5001/contracts/${id}/summaries`,
+            const res = await axios.post<Summary>(`${BACKEND_URL}/contracts/${id}/summaries`,
                 { originalText },
                 { headers: {Authorization: `Bearer ${token}` } }
             );
@@ -109,7 +110,7 @@ export default function Contract() {
         e.preventDefault();
         try {
             await axios.put(
-            `http://localhost:5001/contracts/${id}/annotations/${annotId}`,
+            `${BACKEND_URL}/contracts/${id}/annotations/${annotId}`,
             { startOffset: editStart, endOffset: editEnd, comment: editComment },
             { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -131,7 +132,7 @@ export default function Contract() {
         if (!confirm("Delete this annotation?")) return;
         try {
             await axios.delete(
-            `http://localhost:5001/contracts/${id}/annotations/${annotId}`,
+            `${BACKEND_URL}/contracts/${id}/annotations/${annotId}`,
             { headers: { Authorization: `Bearer ${token}` } }
             );
             setAnnotations((prev) => prev.filter((a) => a.id !== annotId));
@@ -145,7 +146,7 @@ export default function Contract() {
         if (!confirm("Delete this summary?")) return;
         try {
             await axios.delete(
-            `http://localhost:5001/contracts/${id}/summaries/${summaryId}`,
+            `${BACKEND_URL}/contracts/${id}/summaries/${summaryId}`,
             { headers: { Authorization: `Bearer ${token}` } }
             );
             setSummaries((prev) => prev.filter((s) => s.id !== summaryId));
