@@ -3,8 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { OpenAI } from 'openai';
+import multer from "multer";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 dotenv.config();
 const app = express();
@@ -12,6 +14,8 @@ const prisma = new PrismaClient();
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(cors());
 app.use(express.json());
@@ -275,6 +279,68 @@ const updateAnnotation: RequestHandler = async (req, res, next) => {
   }
 };
 app.put('/contracts/:contractId/annotations/:id', requireAuth, updateAnnotation);
+
+
+//upload Contract via AWS
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
+  }
+});
+
+const uploadContractFile: RequestHandler = async (req, res, next) => {
+  try {
+    const { contractId } = req.params;
+    const file = req.file;
+    // @ts-ignore
+    const userId = req.userId;
+
+    if (!file) {
+      res.status(400).json({ error: "No file provided" });
+      return;
+    }
+
+    const contract = await prisma.contract.findFirst({
+      where: { id: contractId, userId }
+    });
+    if (!contract) {
+      res.status(404).json({ error: "Contract not found or not yours" });
+      return;
+    }
+
+    const key = `contracts/${contractId}/${Date.now()}-${file.originalname}`;
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.S3_BUCKET!,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype
+      })
+    );
+
+    const url = `https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+    await prisma.contract.update({
+      where: { id: contractId },
+      data: { fileUrl: url } as Prisma.ContractUpdateInput
+    });
+
+    res.json({ url });
+    return;
+  } catch (err) {
+    next(err);
+  }
+};
+
+app.post(
+  "/contracts/:contractId/upload",
+  requireAuth,
+  upload.single("file"),
+  uploadContractFile
+);
 
 //delete one annotation
 const deleteAnnotation: RequestHandler = async(req, res, next) => {

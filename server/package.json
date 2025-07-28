@@ -7,16 +7,21 @@
     "test": "jest --detectOpenHandles --forceExit",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
   },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.850.0",
     "@prisma/client": "^6.10.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "openai": "^5.7.0",
     "prisma": "^6.10.1"
   },
@@ -26,6 +31,7 @@
     "@types/express": "^5.0.3",
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
     "@types/node": "^24.0.3",
     "@types/supertest": "^6.0.3",
     "dotenv": "^17.2.0",

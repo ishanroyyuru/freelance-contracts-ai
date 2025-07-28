@@ -10,6 +10,7 @@ type ContractDetail = {
   text: string;
   status: string;
   createdAt: string;
+  fileUrl?: string;
 };
 
 type Annotation = {
@@ -41,9 +42,17 @@ export default function Contract() {
     const [editStart, setEditStart]       = useState(0);
     const [editEnd, setEditEnd]           = useState(0);
     const [editComment, setEditComment]   = useState("");
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);  
 
     useEffect(() => {
         if (!id || !token) return;
+
+        axios
+        .get<ContractDetail>(`${BACKEND_URL}/contracts/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => setContract(res.data))
 
         axios
         .get<ContractDetail>(`${BACKEND_URL}/contracts/${id}`, {
@@ -153,6 +162,38 @@ export default function Contract() {
         } catch (err) {
             console.error(err);
             alert("Failed to delete summary");
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files?.[0]) setSelectedFile(e.target.files[0]);
+    };
+
+    const handleFileUpload = async () => {
+        if (!selectedFile || !id) return;
+        setUploading(true);
+        const form = new FormData();
+        form.append("file", selectedFile);
+
+        try {
+            const res = await axios.post<{ url: string }>(
+            `${BACKEND_URL}/contracts/${id}/upload`,
+            form,
+            {
+                headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+                },
+            }
+            );
+            // update the contract state with the new fileUrl
+            setContract((c) => c && { ...c, fileUrl: res.data.url });
+        } catch (err) {
+            console.error(err);
+            alert("Upload failed");
+        } finally {
+            setUploading(false);
+            setSelectedFile(null);
         }
     };
 
@@ -267,6 +308,35 @@ export default function Contract() {
             </li>
         ))}
         </ul>
+        <div className="my-6 p-4 border rounded">
+            <h3 className="font-medium">Upload Contract PDF</h3>
+            <input
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileChange}
+                className="block mb-2"
+            />
+            <button
+                onClick={handleFileUpload}
+                disabled={!selectedFile || uploading}
+                className="bg-green-600 text-white py-1 px-3 rounded disabled:opacity-50"
+            >
+                {uploading ? "Uploading…" : "Upload PDF"}
+            </button>
+            {contract?.fileUrl && (
+                <div className="mt-4">
+                <a
+                    href={contract.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                >
+                    Download PDF
+                </a>
+                </div>
+            )}
+        </div>
+
         <div className="my-6 p-4 border rounded">
         <h3 className="font-medium">Generate Summary</h3>
         <textarea

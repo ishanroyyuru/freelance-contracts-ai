@@ -35,6 +35,8 @@ model Contract {
   status    String
   createdAt DateTime @default(now())
 
+  fileUrl   String?
+
   annotations Annotation[]
   summaries   Summary[]
 }
