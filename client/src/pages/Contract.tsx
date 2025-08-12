@@ -50,12 +50,6 @@ export default function Contract() {
 
         axios
         .get<ContractDetail>(`${BACKEND_URL}/contracts/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => setContract(res.data))
-
-        axios
-        .get<ContractDetail>(`${BACKEND_URL}/contracts/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setContract(res.data))
@@ -181,8 +175,7 @@ export default function Contract() {
             form,
             {
                 headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "multipart/form-data",
+                    Authorization: `Bearer ${token}`
                 },
             }
             );
